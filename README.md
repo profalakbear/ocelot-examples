@@ -16,7 +16,6 @@ This example is designed to showcase the basic functionalities of an API gateway
 ## Technologies Used
 
 * .NET 9.0
-* ASP.NET Core
 * Ocelot
 * Docker
 
