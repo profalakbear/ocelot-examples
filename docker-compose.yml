@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  api1:
+    build: ./TestApi
+    container_name: testapi1
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - SERVER_NUMBER=1
+
+  api2:
+    build: ./TestApi
+    container_name: testapi2
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - SERVER_NUMBER=2
+
+  api3:
+    build: ./TestApi
+    container_name: testapi3
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - SERVER_NUMBER=3
+
+  gateway:
+    build: ./TestGateway
+    container_name: testgateway
+    depends_on:
+      - api1
+      - api2
+      - api3
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "8080:8080"
