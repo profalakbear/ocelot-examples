@@ -25,7 +25,7 @@ Follow the steps below to run the project on your local machine:
 
 1.  **Clone the Repository:**
     ```sh
-    git clone [https://github.com/profalakbear/ocelot-examples.git](https://github.com/profalakbear/ocelot-examples.git)
+    git clone git@github.com:profalakbear/ocelot-examples.git
     cd ocelot-examples
     ```
 
