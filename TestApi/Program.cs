@@ -9,6 +9,19 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.MapGet("/whois", (HttpContext context) =>
+{
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault();
+    var username = context.Request.Headers["X-Username"].FirstOrDefault();
+
+    return Results.Ok(new
+    {
+        UserId = userId,
+        Username = username
+    });
+})
+.WithName("GetWeatherForecast");
+
 
 var adlar = new[]
 {
@@ -29,6 +42,7 @@ app.MapGet("/calisanlar", () =>
             Random.Shared.Next(20, 65)
         ))
         .ToArray();
+        Console.WriteLine("calisanlar fonksiyonu calistiriliyor");
     return calisanlar;
 })
 .WithName("CalisanlariGetir");
@@ -37,6 +51,7 @@ app.MapGet("/calisanlar", () =>
 app.MapGet("/sunucunumarasigetir", () =>
 {
     var val = Environment.GetEnvironmentVariable("SERVER_NUMBER") ?? "0";
+    Console.WriteLine("sunucunumarasigetir fonksiyon calistiriliyor");
     return Results.Text(val + " Numarali Sunucu");
 })
 .WithName("SunucuNumarasiniGetir");
@@ -45,3 +60,4 @@ app.MapGet("/sunucunumarasigetir", () =>
 app.Run();
 
 record LettraCalisani(string Ad, string Soyad, int Yas);
+record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary);

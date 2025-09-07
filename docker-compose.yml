@@ -1,6 +1,46 @@
 version: "3.9"
 
 services:
+  # PostgreSQL Database for Auth Service
+  postgres-auth:
+    image: postgres:15
+    container_name: postgres-auth
+    environment:
+      - POSTGRES_DB=testauth
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass123
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testauth"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Auth SSO Service
+  auth-sso:
+    build: ./TestAuthSSO
+    container_name: testauth-sso
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres-auth;Port=5432;Database=testauth;Username=testuser;Password=testpass123
+    ports:
+      - "8081:8080"
+    networks:
+      - app-network
+    restart: unless-stopped
+
   api1:
     build: ./TestApi
     container_name: testapi1
@@ -8,6 +48,9 @@ services:
       - ASPNETCORE_URLS=http://0.0.0.0:8080
       - ASPNETCORE_ENVIRONMENT=Development
       - SERVER_NUMBER=1
+    networks:
+      - app-network
+    restart: unless-stopped
 
   api2:
     build: ./TestApi
@@ -16,6 +59,9 @@ services:
       - ASPNETCORE_URLS=http://0.0.0.0:8080
       - ASPNETCORE_ENVIRONMENT=Development
       - SERVER_NUMBER=2
+    networks:
+      - app-network
+    restart: unless-stopped
 
   api3:
     build: ./TestApi
@@ -24,6 +70,9 @@ services:
       - ASPNETCORE_URLS=http://0.0.0.0:8080
       - ASPNETCORE_ENVIRONMENT=Development
       - SERVER_NUMBER=3
+    networks:
+      - app-network
+    restart: unless-stopped
 
   gateway:
     build: ./TestGateway
@@ -32,8 +81,19 @@ services:
       - api1
       - api2
       - api3
+      - auth-sso
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:8080
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
       - "8080:8080"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_auth_data:
+
+networks:
+  app-network:
+    driver: bridge
