@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 using System.Text;
-using TestGateway.Transforms;
+using TestGateway.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,11 +81,21 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
+// HttpClientFactory
+builder.Services.AddHttpClient();
+
+// Ekstra yapılandırma
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+    { "AuthValidationEndpoint", "http://auth-sso:8080/api/auth/validate-with-claims" }
+});
+
 var app = builder.Build();
 
 // Middleware pipeline
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseTokenValidation(); // Token doğrulama middleware
 app.UseRateLimiter();
 
 // Health check endpoint

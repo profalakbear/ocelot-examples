@@ -14,6 +14,7 @@ namespace TestAuthSSO.Services
         string GenerateRefreshToken();
         ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
         bool ValidateToken(string token);
+        ClaimsPrincipal? ValidateTokenAndGetPrincipal(string token);
     }
 
     public class JwtService : IJwtService
@@ -35,6 +36,7 @@ namespace TestAuthSSO.Services
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.Username),
                 new(ClaimTypes.Email, user.Email),
+                // YARP tarafından kullanılan özel claim'ler (küçük harfle tanımlandı)
                 new("user_id", user.Id.ToString()),
                 new("username", user.Username),
                 new("email", user.Email)
@@ -113,6 +115,33 @@ namespace TestAuthSSO.Services
             catch
             {
                 return false;
+            }
+        }
+        
+        public ClaimsPrincipal? ValidateTokenAndGetPrincipal(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.SecretKey);
+
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = _jwtSettings.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = _jwtSettings.Audience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                return principal;
+            }
+            catch
+            {
+                return null;
             }
         }
     }

@@ -18,6 +18,7 @@ namespace TestAuthSSO.Services
         Task<ApiResponse<bool>> ChangePasswordAsync(int userId, ChangePasswordRequest request);
         Task<ApiResponse<bool>> ResetPasswordAsync(ResetPasswordRequest request);
         ApiResponse<bool> ValidateToken(string token);
+        ApiResponse<TokenValidationResult> ValidateTokenWithClaims(string token);
     }
 
     public class AuthService : IAuthService
@@ -528,6 +529,50 @@ namespace TestAuthSSO.Services
                     Success = false,
                     Message = "Token doğrulama sırasında bir hata oluştu",
                     Errors = new List<string> { ex.Message }
+                };
+            }
+        }
+
+        public ApiResponse<TokenValidationResult> ValidateTokenWithClaims(string token)
+        {
+            try
+            {
+                var principal = _jwtService.ValidateTokenAndGetPrincipal(token);
+                
+                if (principal == null)
+                {
+                    return new ApiResponse<TokenValidationResult>
+                    {
+                        Success = true,
+                        Message = "Token geçersiz",
+                        Data = new TokenValidationResult { IsValid = false }
+                    };
+                }
+
+                // Token geçerliyse, claim'leri de döndür
+                var result = new TokenValidationResult
+                {
+                    IsValid = true,
+                    UserId = principal.FindFirst("user_id")?.Value,
+                    Username = principal.FindFirst("username")?.Value,
+                    Email = principal.FindFirst("email")?.Value
+                };
+
+                return new ApiResponse<TokenValidationResult>
+                {
+                    Success = true,
+                    Message = "Token geçerli",
+                    Data = result
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<TokenValidationResult>
+                {
+                    Success = false,
+                    Message = "Token doğrulama sırasında bir hata oluştu",
+                    Errors = new List<string> { ex.Message },
+                    Data = new TokenValidationResult { IsValid = false }
                 };
             }
         }

@@ -247,18 +247,53 @@ namespace TestAuthSSO.Controllers
         [HttpPost("validate")]
         public ActionResult<ApiResponse<bool>> ValidateToken([FromHeader(Name = "Authorization")] string authorization)
         {
-            if (string.IsNullOrEmpty(authorization) || !authorization.StartsWith("Bearer "))
+            if (string.IsNullOrEmpty(authorization))
             {
                 return BadRequest(new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Geçersiz token formatı",
-                    Errors = new List<string> { "Invalid token format" }
+                    Message = "Token bulunamadı",
+                    Errors = new List<string> { "Token not found" }
                 });
             }
 
-            var token = authorization["Bearer ".Length..];
+            // Bearer prefix'ini temizle
+            var token = authorization;
+            if (authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = authorization.Substring(7); // "Bearer " uzunluğu 7 karakter
+            }
+            
             var result = _authService.ValidateToken(token);
+            
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Token doğrulama ve kullanıcı bilgilerini getirme
+        /// </summary>
+        [HttpPost("validate-with-claims")]
+        public ActionResult<ApiResponse<TokenValidationResult>> ValidateTokenWithClaims([FromHeader(Name = "Authorization")] string authorization)
+        {
+            if (string.IsNullOrEmpty(authorization))
+            {
+                return BadRequest(new ApiResponse<TokenValidationResult>
+                {
+                    Success = false,
+                    Message = "Token bulunamadı",
+                    Errors = new List<string> { "Token not found" },
+                    Data = new TokenValidationResult { IsValid = false }
+                });
+            }
+
+            // Bearer prefix'ini temizle
+            var token = authorization;
+            if (authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = authorization.Substring(7); // "Bearer " uzunluğu 7 karakter
+            }
+            
+            var result = _authService.ValidateTokenWithClaims(token);
             
             return Ok(result);
         }
